@@ -80,6 +80,27 @@
                 @endif
             </div>
 
+            @if ($suggestions->isNotEmpty())
+                <div class="card card-pad">
+                    <h3 class="eyebrow flex items-center gap-2"><span class="led bg-brand-500"></span> Suggested links</h3>
+                    <ul class="mt-3 space-y-2.5">
+                        @foreach ($suggestions as $s)
+                            <li class="flex items-start gap-2">
+                                <div class="flex-1 min-w-0">
+                                    <a href="{{ route('notes.show', $s['note']) }}" class="block text-sm text-zinc-800 hover:text-brand-600 truncate">{{ $s['note']->title }}</a>
+                                    <div class="font-mono text-[10px] text-zinc-400 truncate">{{ $s['reason'] }}</div>
+                                </div>
+                                <form method="POST" action="{{ route('notes.link', $note) }}">@csrf
+                                    <input type="hidden" name="target_note_id" value="{{ $s['note']->id }}">
+                                    <input type="hidden" name="label" value="related">
+                                    <button class="btn-secondary btn-sm px-2" title="Link these notes">+ link</button>
+                                </form>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
             <form method="POST" action="{{ route('notes.destroy', $note) }}" onsubmit="return confirm('Move this note to trash?')">@csrf @method('DELETE')
                 <button class="btn-danger w-full"><x-icon name="trash" class="w-4 h-4" /> Move to trash</button>
             </form>

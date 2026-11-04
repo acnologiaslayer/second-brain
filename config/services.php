@@ -49,6 +49,10 @@ return [
         // Tuned for nomic-embed-text / gemini-embedding: unrelated text scores ~0.3-0.43.
         'semantic_min_similarity' => (float) env('AI_SEMANTIC_MIN_SIMILARITY', 0.45),
         'semantic_relative_margin' => (float) env('AI_SEMANTIC_RELATIVE_MARGIN', 0.12),
+        // Related-note suggestions and knowledge-graph "similar meaning" edges.
+        'related_min_similarity' => (float) env('AI_RELATED_MIN_SIMILARITY', 0.58),
+        'graph_min_similarity' => (float) env('AI_GRAPH_MIN_SIMILARITY', 0.6),
+        'graph_neighbours' => (int) env('AI_GRAPH_NEIGHBOURS', 2),
     ],
 
 ];

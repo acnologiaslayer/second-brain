@@ -7,6 +7,7 @@ use App\Models\Note;
 use App\Models\Tag;
 use App\Services\AI\AIProviderException;
 use App\Services\Knowledge\NoteIndexingService;
+use App\Services\Knowledge\RelatedNotesService;
 use App\Services\Knowledge\RetrievalService;
 use App\Services\Knowledge\NoteSummarizationService;
 use Illuminate\Http\Request;
@@ -71,12 +72,13 @@ class NoteController extends Controller
         return back()->with('status', 'Captured to inbox.');
     }
 
-    public function show(Note $note)
+    public function show(Note $note, RelatedNotesService $related)
     {
         $this->authorize('view', $note);
         $note->load(['category', 'tags', 'outgoingLinks.target', 'incomingLinks.source']);
         return view('notes.show', [
             'note' => $note,
+            'suggestions' => $related->suggestFor($note, 4),
             'linkable' => $note->user->notes()->whereKeyNot($note->id)->orderBy('title')->get(['id', 'title']),
         ]);
     }

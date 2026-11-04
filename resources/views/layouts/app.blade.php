@@ -18,11 +18,12 @@
                 ['dashboard', 'Home', 'home', request()->routeIs('dashboard'), '01'],
                 ['notes.index', 'Notes', 'notes', request()->routeIs('notes.*') && ! request('trash') && ! request('favorites'), '02'],
                 ['brain.index', 'Brain AI', 'chat', request()->routeIs('brain.*'), '03'],
+                ['graph', 'Graph', 'graph', request()->routeIs('graph'), '04'],
             ],
             'Library' => [
-                ['categories.index', 'Organize', 'folder', request()->routeIs('categories.*'), '04'],
-                [['notes.index', ['favorites' => 1]], 'Favorites', 'star', (bool) request('favorites'), '05'],
-                [['notes.index', ['trash' => 1]], 'Trash', 'trash', (bool) request('trash'), '06'],
+                ['categories.index', 'Organize', 'folder', request()->routeIs('categories.*'), '05'],
+                [['notes.index', ['favorites' => 1]], 'Favorites', 'star', (bool) request('favorites'), '06'],
+                [['notes.index', ['trash' => 1]], 'Trash', 'trash', (bool) request('trash'), '07'],
             ],
         ];
         $categories = $user->categories()->withCount('notes')->orderBy('name')->limit(8)->get();

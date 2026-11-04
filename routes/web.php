@@ -4,6 +4,7 @@ use App\Http\Controllers\AISettingsController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\GraphController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\NoteController;
 use App\Http\Controllers\ProfileController;
@@ -21,6 +22,8 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/notes/{note}/summarize', [NoteController::class, 'summarize'])->name('notes.summarize');
     Route::post('/notes/{note}/links', [NoteController::class, 'link'])->name('notes.link');
     Route::resource('notes', NoteController::class);
+
+    Route::get('/graph', [GraphController::class, 'index'])->name('graph');
 
     Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
     Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
