@@ -7,22 +7,28 @@ use App\Models\Note;
 /** Splits notes into overlapping chunks used for retrieval. Re-runs on every content change. */
 class NoteIndexingService
 {
-    public function __construct(protected int $chunkSize = 800, protected int $overlap = 100) {}
+    protected int $chunkSize = 800;
+    protected int $overlap = 100;
+
+    public function __construct(protected EmbeddingService $embeddings) {}
 
     public function index(Note $note): void
     {
         $text = trim($note->title."\n\n".$note->content);
         $chunks = $this->split($text);
 
-        $note->chunks()->delete();
+        // Keep unchanged chunks (and their embeddings); replace only what changed.
+        $existing = $note->chunks()->get()->keyBy('chunk_index');
         foreach ($chunks as $i => $chunk) {
-            $note->chunks()->create([
-                'user_id' => $note->user_id,
-                'chunk_index' => $i,
-                'content' => $chunk,
-                'content_hash' => hash('sha256', $chunk),
-            ]);
+            $hash = hash('sha256', $chunk);
+            $old = $existing->pull($i);
+            if ($old && $old->content_hash === $hash) continue;
+            $old?->delete(); // cascades to its outdated embeddings
+            $note->chunks()->create(['user_id' => $note->user_id, 'chunk_index' => $i, 'content' => $chunk, 'content_hash' => $hash]);
         }
+        $existing->each->delete();
+
+        $this->embeddings->embedNote($note);
     }
 
     /** @return string[] */

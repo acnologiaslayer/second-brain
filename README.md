@@ -13,13 +13,16 @@ Capture, organize, search and connect notes, then chat with **Brain AI**, an ass
   - Source references shown under each answer
   - "Save to Brain": AI replies open in the note form for review before saving
   - One-click AI note summaries
+- **Meaning-based (semantic) search**: notes are embedded per chunk and combined with keyword search via Reciprocal Rank Fusion. Finds "car maintenance" when you search "automobile". Falls back to keyword search if no embedding model is configured or the endpoint is down.
 - Provider-independent AI layer: **Ollama**, **LM Studio**, or any **OpenAI-compatible** API (OpenAI, OpenRouter, Groq...)
 - API keys encrypted at rest and never rendered back to the browser
 
 ## Architecture
 ```
 app/Services/AI/          AIProviderInterface, AIProviderManager, OllamaProvider, OpenAICompatibleProvider
-app/Services/Knowledge/   NoteIndexingService (chunking), RetrievalService, PromptBuilder, NoteSummarizationService
+app/Services/AI/          + EmbeddingProviderInterface, OllamaEmbeddings, OpenAICompatibleEmbeddings
+app/Services/Knowledge/   NoteIndexingService (incremental chunking), EmbeddingService (vectors + cosine),
+                          RetrievalService (hybrid keyword + semantic, RRF), PromptBuilder, NoteSummarizationService
 app/Http/Controllers/     Dashboard, Note, Category, Conversation, Message, AISettings
 app/Policies/             Note, Category, Conversation ownership checks
 ```
@@ -38,17 +41,24 @@ php artisan migrate
 php artisan serve
 ```
 
+### Meaning-based search
+Set an embedding model in *AI Settings* (e.g. Ollama `nomic-embed-text`, or Gemini `gemini-embedding-001`), then click *Re-index all notes* or run `php artisan brain:embed`.
+
 ### AI provider
 - **Ollama (local, free):** install from ollama.com, run `ollama pull llama3.2`, keep defaults.
 - **Cloud:** open *AI Settings*, choose "OpenAI-compatible", set base URL, model and API key, then *Test connection*.
+
+## Free hosting
+See **[DEPLOY.md](DEPLOY.md)**: Render (app) + Aiven (MySQL) + Groq (chat) + Gemini (embeddings), all free, no credit card.
 
 ## Tests
 ```bash
 php artisan test
 ```
-Covers CRUD, search, cross-user access denial (User A vs User B), retrieval grounding with sources, provider failure handling, save-to-brain review flow and API key encryption.
+Covers CRUD, search, cross-user access denial (User A vs User B), retrieval grounding with sources, provider failure handling, save-to-brain review flow, API key encryption, and semantic search (synonym matching, re-embedding only changed chunks, user isolation, outage fallback).
 
 ## Roadmap
 - [x] Phase 1-4: foundation, knowledge base, AI chat, brain integration
-- [ ] Phase 5: embeddings / semantic search, knowledge graph view
+- [x] Phase 5a: embeddings / semantic search
+- [ ] Phase 5b: knowledge graph view
 - [ ] Phase 6: final testing, documentation and demo

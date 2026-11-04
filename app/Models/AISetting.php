@@ -15,13 +15,22 @@ class AISetting extends Model
 
     protected $table = 'ai_settings';
 
-    protected $fillable = ['provider', 'base_url', 'model', 'api_key_encrypted', 'settings'];
+    protected $fillable = [
+        'provider', 'base_url', 'model', 'api_key_encrypted', 'settings',
+        'embedding_provider', 'embedding_base_url', 'embedding_model', 'embedding_api_key_encrypted',
+    ];
 
-    protected $hidden = ['api_key_encrypted'];
+    protected $hidden = ['api_key_encrypted', 'embedding_api_key_encrypted'];
 
-    protected $casts = ['api_key_encrypted' => 'encrypted', 'settings' => 'array'];
+    protected $casts = [
+        'api_key_encrypted' => 'encrypted',
+        'embedding_api_key_encrypted' => 'encrypted',
+        'settings' => 'array',
+    ];
 
     public function user(): BelongsTo { return $this->belongsTo(User::class); }
 
     public function hasApiKey(): bool { return filled($this->api_key_encrypted); }
+
+    public function hasEmbeddingApiKey(): bool { return filled($this->embedding_api_key_encrypted); }
 }

@@ -7,6 +7,7 @@ use App\Models\Note;
 use App\Models\Tag;
 use App\Services\AI\AIProviderException;
 use App\Services\Knowledge\NoteIndexingService;
+use App\Services\Knowledge\RetrievalService;
 use App\Services\Knowledge\NoteSummarizationService;
 use Illuminate\Http\Request;
 
@@ -14,23 +15,32 @@ class NoteController extends Controller
 {
     public function __construct(protected NoteIndexingService $indexer) {}
 
-    public function index(Request $request)
+    public function index(Request $request, RetrievalService $retrieval)
     {
         $user = $request->user();
         $trash = $request->boolean('trash');
+        $q = $request->string('q')->toString();
+        $mode = $request->input('mode', 'smart');
+        // Smart mode: hybrid keyword + meaning-based ranking. Exact mode: plain substring match.
+        $ranked = ($q !== '' && ! $trash && $mode === 'smart') ? $retrieval->rankNoteIds($user, $q) : null;
+
         $notes = ($trash ? $user->notes()->onlyTrashed() : $user->notes())
             ->with(['category', 'tags'])
-            ->search($request->string('q')->toString())
+            ->when($ranked !== null, fn ($b) => $b->whereIn('id', $ranked->keys()->all() ?: [0]))
+            ->when($ranked === null, fn ($b) => $b->search($q))
             ->when($request->filled('category'), fn ($q) => $q->where('category_id', $request->integer('category')))
             ->when($request->filled('tag'), fn ($q) => $q->whereHas('tags', fn ($t) => $t->where('tags.id', $request->integer('tag'))))
             ->when($request->filled('type'), fn ($q) => $q->where('note_type', $request->string('type')))
             ->when($request->boolean('favorites'), fn ($q) => $q->where('is_favorite', true))
-            ->orderByDesc('is_pinned')->latest('updated_at')
+            ->when($ranked?->isNotEmpty(), fn ($b) => $b->orderByRaw('CASE id '.$ranked->keys()->map(fn ($id, $i) => 'WHEN '.(int) $id.' THEN '.$i)->implode(' ').' END'))
+            ->when($ranked === null, fn ($b) => $b->orderByDesc('is_pinned')->latest('updated_at'))
             ->paginate(12)->withQueryString();
 
         return view('notes.index', [
             'notes' => $notes,
             'trash' => $trash,
+            'matchMethods' => $ranked ?? collect(),
+            'semantic' => app(\App\Services\Knowledge\EmbeddingService::class)->enabledFor($user),
             'categories' => $user->categories()->orderBy('name')->get(),
             'tags' => $user->tags()->orderBy('name')->get(),
         ]);

@@ -1,0 +1,53 @@
+# One-click deploy: Render Dashboard -> New -> Blueprint -> pick this repo.
+services:
+  - type: web
+    name: second-brain
+    runtime: docker
+    plan: free
+    healthCheckPath: /up
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_KEY
+        sync: false        # generate locally: php artisan key:generate --show
+      - key: APP_URL
+        sync: false        # e.g. https://second-brain.onrender.com
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: SESSION_DRIVER
+        value: database
+      - key: CACHE_STORE
+        value: database
+      - key: DB_CONNECTION
+        value: mysql
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        sync: false
+      - key: DB_DATABASE
+        value: defaultdb
+      - key: DB_USERNAME
+        value: avnadmin
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_SSL_CA_PEM
+        sync: false        # paste Aiven CA certificate contents
+      # Free AI defaults (users can override in AI Settings)
+      - key: AI_PROVIDER
+        value: openai_compatible
+      - key: AI_BASE_URL
+        value: https://api.groq.com/openai/v1
+      - key: AI_MODEL
+        value: llama-3.1-8b-instant
+      - key: AI_API_KEY
+        sync: false
+      - key: AI_EMBEDDING_PROVIDER
+        value: openai_compatible
+      - key: AI_EMBEDDING_BASE_URL
+        value: https://generativelanguage.googleapis.com/v1beta/openai
+      - key: AI_EMBEDDING_MODEL
+        value: gemini-embedding-001
+      - key: AI_EMBEDDING_API_KEY
+        sync: false

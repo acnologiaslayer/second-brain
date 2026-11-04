@@ -14,6 +14,10 @@ class AIProviderManager
             'base_url' => config('services.ai.base_url'),
             'model' => config('services.ai.model'),
             'api_key_encrypted' => config('services.ai.api_key'),
+            'embedding_provider' => config('services.ai.embedding_provider'),
+            'embedding_base_url' => config('services.ai.embedding_base_url'),
+            'embedding_model' => config('services.ai.embedding_model'),
+            'embedding_api_key_encrypted' => config('services.ai.embedding_api_key'),
         ]);
     }
 
@@ -33,6 +37,28 @@ class AIProviderManager
             'ollama' => new OllamaProvider($baseUrl, $s->model),
             'lm_studio', 'openai_compatible' => new OpenAICompatibleProvider($baseUrl, $s->model, $s->api_key_encrypted),
             default => throw new AIProviderException("Unknown provider [{$s->provider}]."),
+        };
+    }
+
+    /** Returns null when semantic search is not configured; callers fall back to keyword search. */
+    public function embeddingsForUser(User $user): ?EmbeddingProviderInterface
+    {
+        return $this->makeEmbeddings($this->settingsFor($user));
+    }
+
+    public function makeEmbeddings(AISetting $s): ?EmbeddingProviderInterface
+    {
+        if (blank($s->embedding_model)) return null;
+
+        // Embeddings may use their own endpoint (e.g. chat on Groq, embeddings on Gemini) or reuse the chat one.
+        $provider = $s->embedding_provider ?: $s->provider;
+        $baseUrl = $s->embedding_base_url ?: ($s->embedding_provider ? null : $s->base_url) ?: (AISetting::PROVIDERS[$provider]['base_url'] ?? null);
+        $key = $s->embedding_api_key_encrypted ?: ($s->embedding_provider && $s->embedding_provider !== $s->provider ? null : $s->api_key_encrypted);
+        if (! $baseUrl) return null;
+
+        return match ($provider) {
+            'ollama' => new OllamaEmbeddings($baseUrl, $s->embedding_model),
+            default => new OpenAICompatibleEmbeddings($baseUrl, $s->embedding_model, $key),
         };
     }
 }

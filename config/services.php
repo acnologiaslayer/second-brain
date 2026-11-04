@@ -41,6 +41,11 @@ return [
         'base_url' => env('AI_BASE_URL', 'http://localhost:11434'),
         'model' => env('AI_MODEL', 'llama3.2'),
         'api_key' => env('AI_API_KEY'),
+        // Semantic search. Leave AI_EMBEDDING_MODEL empty to use keyword search only.
+        'embedding_provider' => env('AI_EMBEDDING_PROVIDER'),
+        'embedding_base_url' => env('AI_EMBEDDING_BASE_URL'),
+        'embedding_model' => env('AI_EMBEDDING_MODEL'),
+        'embedding_api_key' => env('AI_EMBEDDING_API_KEY'),
     ],
 
 ];

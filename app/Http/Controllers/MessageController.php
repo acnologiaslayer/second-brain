@@ -27,7 +27,7 @@ class MessageController extends Controller
 
         $sources = $retrieval->retrieve($user, $question);
         $messages = $prompts->messages($prompts->system($sources), $conversation->messages()->get());
-        $sourceMeta = $sources->map(fn ($s) => ['note_id' => $s['chunk']->note_id, 'title' => $s['chunk']->note->title, 'score' => $s['score']])->all();
+        $sourceMeta = $sources->map(fn ($s) => ['note_id' => $s['chunk']->note_id, 'title' => $s['chunk']->note->title, 'score' => $s['score'], 'method' => $s['method']])->all();
 
         try {
             $settings = $ai->settingsFor($user);

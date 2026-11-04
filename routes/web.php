@@ -37,6 +37,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/settings/ai', [AISettingsController::class, 'edit'])->name('settings.ai');
     Route::put('/settings/ai', [AISettingsController::class, 'update'])->name('settings.ai.update');
     Route::post('/settings/ai/test', [AISettingsController::class, 'testConnection'])->name('settings.ai.test');
+    Route::post('/settings/ai/test-embeddings', [AISettingsController::class, 'testEmbeddings'])->name('settings.ai.test-embeddings');
+    Route::post('/settings/ai/reindex', [AISettingsController::class, 'reindex'])->middleware('throttle:3,1')->name('settings.ai.reindex');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
