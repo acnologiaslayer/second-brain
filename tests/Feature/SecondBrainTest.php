@@ -83,7 +83,7 @@ test('save to brain prefills note form for review', function () {
     $conv = $u->conversations()->create(['title' => 'Chat']);
     $m = $conv->messages()->create(['role' => 'assistant', 'content' => 'Useful answer']);
     $this->actingAs($u)->get("/brain/messages/{$m->id}/save-as-note")->assertRedirectContains('/notes/create');
-    $this->get('/notes/create?content=Useful+answer')->assertSee('Review this AI-generated content');
+    $this->get('/notes/create?content=Useful+answer')->assertSee('Review and edit it before saving');
 });
 
 test('api key is stored encrypted and never rendered', function () {

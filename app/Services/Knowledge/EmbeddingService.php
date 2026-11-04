@@ -54,10 +54,12 @@ class EmbeddingService
     /**
      * @return Collection<int, array{chunk_id: int, note_id: int, similarity: float}> best first
      */
-    public function search(User $user, string $query, int $limit = 20, float $minSimilarity = 0.2): Collection
+    public function search(User $user, string $query, int $limit = 20, ?float $minSimilarity = null): Collection
     {
         $provider = $this->ai->embeddingsForUser($user);
         if (! $provider || trim($query) === '') return collect();
+        $minSimilarity ??= (float) config('services.ai.semantic_min_similarity', 0.45);
+        $margin = (float) config('services.ai.semantic_relative_margin', 0.12);
 
         try {
             $q = self::normalize($provider->embed([$query])[0] ?? []);
@@ -84,7 +86,11 @@ class EmbeddingService
                 }
             }, 'embeddings.id', 'id');
 
-        return $results->sortByDesc('similarity')->take($limit)->values();
+        // Embedding models give unrelated text a non-trivial baseline similarity, so besides the
+        // absolute floor we drop anything far below the best match (relative cutoff).
+        $best = $results->max('similarity') ?? 0;
+        return $results->filter(fn ($r) => $r['similarity'] >= $best - $margin)
+            ->sortByDesc('similarity')->take($limit)->values();
     }
 
     public static function normalize(array $v): array

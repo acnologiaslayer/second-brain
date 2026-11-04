@@ -46,6 +46,9 @@ return [
         'embedding_base_url' => env('AI_EMBEDDING_BASE_URL'),
         'embedding_model' => env('AI_EMBEDDING_MODEL'),
         'embedding_api_key' => env('AI_EMBEDDING_API_KEY'),
+        // Tuned for nomic-embed-text / gemini-embedding: unrelated text scores ~0.3-0.43.
+        'semantic_min_similarity' => (float) env('AI_SEMANTIC_MIN_SIMILARITY', 0.45),
+        'semantic_relative_margin' => (float) env('AI_SEMANTIC_RELATIVE_MARGIN', 0.12),
     ],
 
 ];

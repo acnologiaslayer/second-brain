@@ -46,7 +46,7 @@ class MessageController extends Controller
         $conversation->touch();
 
         if ($request->expectsJson()) {
-            return response()->json(['message' => view('brain._message', ['m' => $reply])->render()]);
+            return response()->json(['message' => view('brain._message', ['m' => $reply])->render(), 'title' => $conversation->title]);
         }
         return redirect()->route('brain.show', $conversation);
     }

@@ -1,67 +1,73 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <h2 class="font-semibold text-xl text-gray-800">{{ $trash ? 'Trash' : 'Notes' }}</h2>
-            <a href="{{ route('notes.create') }}" class="bg-indigo-600 text-white text-sm px-4 py-2 rounded-md hover:bg-indigo-700">+ New note</a>
+    <x-slot name="title">{{ $trash ? 'Trash' : 'Notes' }}</x-slot>
+    @php
+        $activeCategory = $categories->firstWhere('id', request('category'));
+        $heading = $trash ? 'Trash' : (request('favorites') ? 'Favorites' : ($activeCategory?->name ?? (request('type') === 'inbox' ? 'Inbox' : 'All notes')));
+        $filtersOn = request()->hasAny(['category', 'tag', 'type', 'favorites']) && collect(request()->only(['category', 'tag', 'type', 'favorites']))->filter()->isNotEmpty();
+    @endphp
+    <div class="max-w-6xl mx-auto space-y-5">
+        <div class="flex flex-wrap items-end justify-between gap-3">
+            <div>
+                <h1 class="page-title">{{ $heading }}</h1>
+                <p class="text-sm text-zinc-500 mt-1">
+                    {{ $notes->total() }} {{ Str::plural('note', $notes->total()) }}
+                    @if (request('q')) matching “{{ request('q') }}” @endif
+                </p>
+            </div>
+            @unless ($trash)<a href="{{ route('notes.create') }}" class="btn-primary"><x-icon name="plus" class="w-4 h-4" /> New note</a>@endunless
         </div>
-    </x-slot>
-    <div class="py-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
-        <form method="GET" class="bg-white rounded-lg shadow-sm p-4 grid grid-cols-2 md:grid-cols-6 gap-2 items-center text-sm">
-            @if ($trash)<input type="hidden" name="trash" value="1">@endif
-            <div class="col-span-2 flex gap-1">
-                <input name="q" value="{{ request('q') }}" placeholder="{{ $semantic ? 'Search by meaning or keyword...' : 'Search title or content...' }}" class="flex-1 rounded-md border-gray-300 text-sm">
-                <select name="mode" class="rounded-md border-gray-300 text-sm" title="Smart = keyword + meaning, Exact = literal text">
-                    <option value="smart" @selected(request('mode', 'smart') === 'smart')>{{ $semantic ? '🧠 Smart' : 'Ranked' }}</option>
-                    <option value="exact" @selected(request('mode') === 'exact')>Exact</option>
-                </select>
-            </div>
-            <select name="category" class="rounded-md border-gray-300 text-sm"><option value="">All categories</option>
-                @foreach ($categories as $c)<option value="{{ $c->id }}" @selected(request('category') == $c->id)>{{ $c->name }}</option>@endforeach</select>
-            <select name="tag" class="rounded-md border-gray-300 text-sm"><option value="">All tags</option>
-                @foreach ($tags as $t)<option value="{{ $t->id }}" @selected(request('tag') == $t->id)>#{{ $t->name }}</option>@endforeach</select>
-            <select name="type" class="rounded-md border-gray-300 text-sm"><option value="">All types</option>
-                @foreach (\App\Models\Note::TYPES as $t)<option @selected(request('type') == $t)>{{ $t }}</option>@endforeach</select>
-            <div class="flex gap-2 items-center">
-                <label class="flex items-center gap-1"><input type="checkbox" name="favorites" value="1" @checked(request('favorites')) class="rounded"> ★</label>
-                <button class="bg-gray-800 text-white px-3 py-2 rounded-md">Filter</button>
-            </div>
-        </form>
-        @if (request('q') && ! $trash && request('mode', 'smart') === 'smart')
-            <p class="text-sm text-gray-500">Ranked by relevance{{ $semantic ? ' using keyword + meaning-based (semantic) search' : ' (keyword only. Set an embedding model in AI Settings to enable meaning-based search)' }}.</p>
-        @endif
-        <div class="text-sm"><a href="{{ $trash ? route('notes.index') : route('notes.index', ['trash' => 1]) }}" class="text-gray-500 hover:text-indigo-600">{{ $trash ? '← Back to notes' : '🗑 View trash' }}</a></div>
 
-        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            @forelse ($notes as $note)
-                <div class="bg-white rounded-lg shadow-sm p-4 flex flex-col">
-                    <div class="flex justify-between items-start">
-                        @if ($trash)
-                            <span class="font-semibold text-gray-800">{{ $note->title }}</span>
-                        @else
-                            <a href="{{ route('notes.show', $note) }}" class="font-semibold text-gray-800 hover:text-indigo-600">{{ $note->is_pinned ? '📌 ' : '' }}{{ $note->title }}</a>
-                        @endif
-                        <span class="flex gap-1 items-center">
-                            @if ($m = $matchMethods[$note->id] ?? null)<span class="text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded {{ $m === 'semantic' ? 'bg-purple-100 text-purple-700' : ($m === 'hybrid' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600') }}">{{ $m === 'semantic' ? 'meaning' : $m }}</span>@endif
-                            @if ($note->is_favorite)<span class="text-yellow-500">★</span>@endif
-                        </span>
-                    </div>
-                    <p class="text-sm text-gray-600 mt-2 flex-1">{{ Str::limit($note->content, 140) }}</p>
-                    <div class="flex flex-wrap gap-1 mt-3 text-xs">
-                        <span class="bg-gray-100 px-2 py-0.5 rounded">{{ $note->note_type }}</span>
-                        @if ($note->category)<span class="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded">{{ $note->category->name }}</span>@endif
-                        @foreach ($note->tags as $t)<span class="text-gray-500">#{{ $t->name }}</span>@endforeach
-                    </div>
-                    @if ($trash)
-                        <div class="flex gap-3 mt-3 text-sm">
-                            <form method="POST" action="{{ route('notes.restore', $note->id) }}">@csrf<button class="text-indigo-600">Restore</button></form>
-                            <form method="POST" action="{{ route('notes.force', $note->id) }}" onsubmit="return confirm('Permanently delete?')">@csrf @method('DELETE')<button class="text-red-600">Delete forever</button></form>
-                        </div>
-                    @endif
+        <form method="GET" class="flex flex-wrap items-center gap-2" x-data @change="$el.submit()">
+            @if ($trash)<input type="hidden" name="trash" value="1">@endif
+            @if (request('favorites'))<input type="hidden" name="favorites" value="1">@endif
+            <div class="relative flex-1 min-w-[220px]">
+                <x-icon name="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+                <input name="q" value="{{ request('q') }}" placeholder="{{ $semantic ? 'Search by meaning or keyword…' : 'Search title or content…' }}" class="input pl-9" data-search @change.stop>
+            </div>
+            @unless ($trash)
+                <div class="inline-flex rounded-lg border border-zinc-200 bg-white p-0.5 text-sm shadow-sm" title="Smart: keyword + meaning. Exact: literal text.">
+                    @foreach (['smart' => $semantic ? 'Smart' : 'Ranked', 'exact' => 'Exact'] as $val => $label)
+                        <label class="cursor-pointer">
+                            <input type="radio" name="mode" value="{{ $val }}" class="sr-only peer" @checked(request('mode', 'smart') === $val)>
+                            <span class="block rounded-md px-3 py-1.5 text-zinc-500 peer-checked:bg-zinc-900 peer-checked:text-white transition">{{ $label }}</span>
+                        </label>
+                    @endforeach
                 </div>
-            @empty
-                <p class="text-gray-500">No notes found.</p>
-            @endforelse
-        </div>
-        {{ $notes->links() }}
+            @endunless
+            <select name="category" class="input w-auto"><option value="">All categories</option>
+                @foreach ($categories as $c)<option value="{{ $c->id }}" @selected(request('category') == $c->id)>{{ $c->name }}</option>@endforeach</select>
+            <select name="tag" class="input w-auto"><option value="">All tags</option>
+                @foreach ($tags as $t)<option value="{{ $t->id }}" @selected(request('tag') == $t->id)>#{{ $t->name }}</option>@endforeach</select>
+            <select name="type" class="input w-auto"><option value="">All types</option>
+                @foreach (\App\Models\Note::TYPES as $t)<option value="{{ $t }}" @selected(request('type') == $t)>{{ ucfirst($t) }}</option>@endforeach</select>
+            @if ($filtersOn || request('q'))
+                <a href="{{ route('notes.index', $trash ? ['trash' => 1] : []) }}" class="btn-ghost">Clear</a>
+            @endif
+        </form>
+
+        @if (request('q') && ! $trash && request('mode', 'smart') === 'smart')
+            <p class="text-xs text-zinc-500 flex items-center gap-1.5">
+                <x-icon name="sparkles" class="w-3.5 h-3.5 text-violet-500" />
+                @if ($semantic) Ranked by relevance using keyword + meaning-based search.
+                @else Ranked by keyword. <a href="{{ route('settings.ai') }}" class="text-brand-600 hover:underline">Add an embedding model</a> to search by meaning.
+                @endif
+            </p>
+        @endif
+
+        @if ($notes->isEmpty())
+            <div class="card p-12 text-center">
+                <x-icon :name="$trash ? 'trash' : 'notes'" class="w-10 h-10 mx-auto text-zinc-300" />
+                <p class="mt-3 text-sm font-medium text-zinc-700">{{ $trash ? 'Trash is empty' : (request('q') || $filtersOn ? 'No matching notes' : 'No notes yet') }}</p>
+                <p class="text-sm text-zinc-500 mt-1">{{ $trash ? 'Deleted notes appear here and can be restored.' : (request('q') || $filtersOn ? 'Try a different search or clear the filters.' : 'Capture your first idea to get started.') }}</p>
+                @if (! $trash && ! request('q') && ! $filtersOn)<a href="{{ route('notes.create') }}" class="btn-primary mt-4">New note</a>@endif
+            </div>
+        @else
+            <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                @foreach ($notes as $note)
+                    <x-note-card :note="$note" :trash="$trash" :method="$matchMethods[$note->id] ?? null" />
+                @endforeach
+            </div>
+            <div>{{ $notes->links() }}</div>
+        @endif
     </div>
 </x-app-layout>

@@ -1,4 +1,6 @@
 <x-guest-layout>
+    <h1 class="text-2xl font-semibold text-zinc-900 tracking-tight">Create your account</h1>
+    <p class="mt-1 mb-8 text-sm text-zinc-500">Start building your second brain in seconds.</p>
     <form method="POST" action="{{ route('register') }}">
         @csrf
 
@@ -49,4 +51,5 @@
             </x-primary-button>
         </div>
     </form>
+
 </x-guest-layout>

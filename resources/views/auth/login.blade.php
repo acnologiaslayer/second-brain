@@ -1,4 +1,6 @@
 <x-guest-layout>
+    <h1 class="text-2xl font-semibold text-zinc-900 tracking-tight">Welcome back</h1>
+    <p class="mt-1 mb-8 text-sm text-zinc-500">Sign in to your second brain.</p>
     <!-- Session Status -->
     <x-auth-session-status class="mb-4" :status="session('status')" />
 
@@ -39,9 +41,10 @@
                 </a>
             @endif
 
-            <x-primary-button class="ms-3">
+            <x-primary-button class="ms-3 w-full sm:w-auto">
                 {{ __('Log in') }}
             </x-primary-button>
         </div>
     </form>
+<p class="mt-6 text-center text-sm text-zinc-500">No account? <a href="{{ route('register') }}" class="font-medium text-brand-600 hover:text-brand-700">Create one</a></p>
 </x-guest-layout>
