@@ -1,0 +1,62 @@
+<?php
+
+namespace App\Services\Knowledge;
+
+use App\Models\NoteChunk;
+use App\Models\User;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
+
+/**
+ * Keyword retrieval over note chunks, always scoped to the owner.
+ * Scores chunks by distinct query-term hits (title hits weighted higher).
+ * Designed to be swapped for embedding similarity later.
+ */
+class RetrievalService
+{
+    protected const STOPWORDS = ['the','a','an','and','or','of','to','in','on','for','is','are','was','what','how','why','do','does','did','i','my','me','you','it','that','this','with','about','can','from','be','by','at','as','which','who','when','where','tell'];
+
+    /** @return Collection<int, array{chunk: NoteChunk, score: float}> */
+    public function retrieve(User $user, string $query, int $limit = 5): Collection
+    {
+        $terms = $this->terms($query);
+        if ($terms->isEmpty()) return collect();
+
+        $candidates = NoteChunk::query()
+            ->where('user_id', $user->id)
+            ->whereHas('note') // excludes soft-deleted notes
+            ->where(function ($q) use ($terms) {
+                foreach ($terms as $t) $q->orWhere('content', 'like', "%{$t}%");
+            })
+            ->with('note:id,title,user_id')
+            ->limit(200)
+            ->get();
+
+        return $candidates
+            ->map(function (NoteChunk $c) use ($terms) {
+                $text = Str::lower($c->content);
+                $title = Str::lower($c->note->title);
+                $score = 0.0;
+                foreach ($terms as $t) {
+                    $hits = substr_count($text, $t);
+                    if ($hits) $score += 1 + log($hits);
+                    if (str_contains($title, $t)) $score += 2;
+                }
+                return ['chunk' => $c, 'score' => round($score, 3)];
+            })
+            ->filter(fn ($r) => $r['score'] > 0)
+            ->sortByDesc('score')
+            ->unique(fn ($r) => $r['chunk']->note_id)
+            ->take($limit)
+            ->values();
+    }
+
+    protected function terms(string $query): Collection
+    {
+        return collect(preg_split('/[^\p{L}\p{N}]+/u', Str::lower($query)))
+            ->filter(fn ($t) => mb_strlen($t) > 2 && ! in_array($t, self::STOPWORDS, true))
+            ->unique()
+            ->take(12)
+            ->values();
+    }
+}
