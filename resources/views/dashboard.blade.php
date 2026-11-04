@@ -1,83 +1,88 @@
 <x-app-layout>
     <x-slot name="title">Home</x-slot>
-    <div class="max-w-6xl mx-auto space-y-6">
-        <div>
-            <h1 class="page-title">Good {{ now()->hour < 12 ? 'morning' : (now()->hour < 18 ? 'afternoon' : 'evening') }}, {{ strtok(Auth::user()->name, ' ') }}</h1>
-            <p class="text-sm text-zinc-500 mt-1">Here's what's in your second brain.</p>
+    <div class="max-w-6xl mx-auto space-y-7">
+        <div class="flex flex-wrap items-end justify-between gap-4">
+            <div>
+                <div class="eyebrow">{{ now()->format('l · d M Y') }}</div>
+                <h1 class="page-title mt-1">Good {{ now()->hour < 12 ? 'morning' : (now()->hour < 18 ? 'afternoon' : 'evening') }}, {{ strtok(Auth::user()->name, ' ') }}.</h1>
+            </div>
+            <a href="{{ route('brain.index') }}" class="btn-secondary"><x-icon name="chat" class="w-4 h-4" /> Ask Brain AI</a>
         </div>
 
-        {{-- Quick capture --}}
-        <form method="POST" action="{{ route('capture') }}" class="card p-2 flex items-start gap-2 focus-within:ring-2 focus-within:ring-brand-500/30 focus-within:border-brand-300 transition"
-              x-data="{ v: '' }">
+        {{-- Quick capture: terminal prompt --}}
+        <form method="POST" action="{{ route('capture') }}" class="card ticks flex items-start focus-within:border-zinc-900 transition-colors" x-data="{ v: '' }">
             @csrf
-            <x-icon name="bolt" class="w-5 h-5 text-amber-500 mt-2.5 ml-2 shrink-0" />
-            <textarea name="content" x-model="v" rows="1" required placeholder="Quick capture: jot down a thought, link or idea…"
-                      class="flex-1 resize-none border-0 focus:ring-0 text-sm py-2.5 placeholder:text-zinc-400"
+            <span class="font-mono text-sm text-brand-500 font-bold pl-4 pt-3 select-none">&gt;_</span>
+            <textarea name="content" x-model="v" rows="1" required placeholder="capture a thought…"
+                      class="flex-1 resize-none border-0 bg-transparent focus:ring-0 font-mono text-sm py-3 px-3 placeholder:text-zinc-400"
                       @input="$el.style.height='auto'; $el.style.height=$el.scrollHeight+'px'"
-                      @keydown.ctrl.enter="$el.form.submit()" @keydown.meta.enter="$el.form.submit()"></textarea>
-            <button class="btn-primary m-0.5 shrink-0" :disabled="!v.trim()"><span class="hidden sm:inline">Capture</span><x-icon name="plus" class="w-4 h-4 sm:hidden" /></button>
+                      @keydown.ctrl.enter="v.trim() && $el.form.submit()" @keydown.meta.enter="v.trim() && $el.form.submit()"></textarea>
+            <button class="btn-primary m-1.5 shrink-0" :disabled="!v.trim()"><span class="hidden sm:inline">Capture</span><x-icon name="plus" class="w-4 h-4 sm:hidden" /></button>
         </form>
 
-        {{-- Stats --}}
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {{-- Readouts --}}
+        <div class="grid grid-cols-2 lg:grid-cols-4 border border-zinc-200 bg-paper divide-x divide-zinc-200 [&>*:nth-child(n+3)]:border-t lg:[&>*:nth-child(n+3)]:border-t-0 [&>*:nth-child(3)]:border-l-0 lg:[&>*:nth-child(3)]:border-l">
             @foreach ([
-                ['Notes', $stats['notes'], 'notes', route('notes.index')],
-                ['Favorites', $stats['favorites'], 'star', route('notes.index', ['favorites' => 1])],
-                ['Categories', $stats['categories'], 'folder', route('categories.index')],
-                ['Conversations', $stats['conversations'], 'chat', route('brain.index')],
-            ] as [$label, $value, $icon, $href])
-                <a href="{{ $href }}" class="card p-4 flex items-center gap-4 hover:border-zinc-300 transition">
-                    <span class="grid place-items-center w-10 h-10 rounded-lg bg-zinc-100 text-zinc-500"><x-icon :name="$icon" /></span>
-                    <div>
-                        <div class="text-2xl font-semibold text-zinc-900 leading-none">{{ $value }}</div>
-                        <div class="text-xs text-zinc-500 mt-1">{{ $label }}</div>
+                ['Notes', $stats['notes'], route('notes.index')],
+                ['Favorites', $stats['favorites'], route('notes.index', ['favorites' => 1])],
+                ['Categories', $stats['categories'], route('categories.index')],
+                ['Conversations', $stats['conversations'], route('brain.index')],
+            ] as $i => [$label, $value, $href])
+                <a href="{{ $href }}" class="group px-5 py-4 hover:bg-zinc-100 transition-colors">
+                    <div class="flex items-center justify-between eyebrow text-[9.5px]">
+                        <span>{{ $label }}</span><span class="text-zinc-300 group-hover:text-brand-500">↗</span>
                     </div>
+                    <div class="mt-2 font-mono text-3xl font-semibold text-zinc-900 tabular-nums">{{ str_pad($value, 2, '0', STR_PAD_LEFT) }}</div>
                 </a>
             @endforeach
         </div>
 
         @if ($inbox)
-            <a href="{{ route('notes.index', ['type' => 'inbox']) }}" class="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 hover:bg-amber-100/70 transition">
-                <span><strong>{{ $inbox }}</strong> captured {{ Str::plural('item', $inbox) }} in your inbox waiting to be organized</span>
-                <span>Review →</span>
+            <a href="{{ route('notes.index', ['type' => 'inbox']) }}" class="flex items-center gap-3 card px-4 py-3 text-sm hover:border-zinc-900 transition-colors">
+                <span class="led bg-warn led-pulse"></span>
+                <span class="font-mono text-[10.5px] font-semibold tracking-wider text-zinc-400">INBOX</span>
+                <span class="flex-1 text-zinc-700"><strong class="text-zinc-900">{{ $inbox }}</strong> captured {{ Str::plural('item', $inbox) }} waiting to be organized</span>
+                <span class="font-mono text-xs text-brand-600">review →</span>
             </a>
         @endif
 
         <div class="grid lg:grid-cols-3 gap-6">
-            <section class="lg:col-span-2 space-y-3">
-                <div class="flex items-center justify-between">
-                    <h2 class="text-sm font-semibold text-zinc-900">Recent notes</h2>
-                    <a href="{{ route('notes.index') }}" class="text-sm text-brand-600 hover:text-brand-700">View all</a>
+            <section class="lg:col-span-2">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="eyebrow">Recent notes</h2>
+                    <a href="{{ route('notes.index') }}" class="font-mono text-[11px] text-zinc-500 hover:text-brand-600">view all →</a>
                 </div>
                 @if ($recent->isEmpty())
                     <div class="card p-10 text-center">
-                        <x-icon name="notes" class="w-8 h-8 mx-auto text-zinc-300" />
-                        <p class="mt-2 text-sm text-zinc-500">No notes yet.</p>
-                        <a href="{{ route('notes.create') }}" class="btn-primary mt-4">Create your first note</a>
+                        <p class="font-mono text-sm text-zinc-500">// no notes yet</p>
+                        <a href="{{ route('notes.create') }}" class="btn-primary mt-4">Write your first note</a>
                     </div>
                 @else
-                    <div class="grid sm:grid-cols-2 gap-3">
+                    <div class="grid sm:grid-cols-2 gap-4">
                         @foreach ($recent as $n)<x-note-card :note="$n" />@endforeach
                     </div>
                 @endif
             </section>
 
             <aside class="space-y-6">
-                <a href="{{ route('brain.index') }}" class="block rounded-xl p-5 text-white bg-gradient-to-br from-brand-600 to-violet-600 shadow-sm hover:shadow-md transition">
-                    <x-icon name="sparkles" class="w-6 h-6 opacity-90" />
-                    <div class="mt-3 font-semibold">Ask Brain AI</div>
-                    <p class="text-sm text-white/80 mt-1">Chat with an assistant that answers from your own notes and cites its sources.</p>
-                </a>
-                <section class="card">
-                    <h2 class="px-4 pt-4 pb-2 text-sm font-semibold text-zinc-900 flex items-center gap-2"><x-icon name="pin" class="w-4 h-4 text-zinc-400" /> Pinned</h2>
-                    <div class="px-2 pb-2">
+                <section>
+                    <h2 class="eyebrow mb-3">Pinned</h2>
+                    <div class="card divide-y divide-zinc-200">
                         @forelse ($pinned as $n)
-                            <a href="{{ route('notes.show', $n) }}" class="block rounded-lg px-2 py-2 text-sm text-zinc-700 hover:bg-zinc-50 truncate">{{ $n->title }}</a>
+                            <a href="{{ route('notes.show', $n) }}" class="flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-800 hover:bg-zinc-100 hover:text-brand-600 transition-colors">
+                                <span class="led bg-brand-500"></span><span class="truncate">{{ $n->title }}</span>
+                            </a>
                         @empty
-                            <p class="px-2 pb-2 text-sm text-zinc-400">Pin important notes to keep them here.</p>
+                            <p class="px-4 py-4 font-mono text-xs text-zinc-400">// pin notes to keep them here</p>
                         @endforelse
                     </div>
                 </section>
+
+                <a href="{{ route('brain.index') }}" class="block card ticks p-5 bg-zinc-900 border-zinc-900 text-zinc-50 hover:shadow-md transition-shadow group">
+                    <div class="font-mono text-[10px] tracking-label text-brand-400">BRAIN.AI</div>
+                    <div class="mt-2 font-semibold text-lg leading-snug">Ask questions.<br>Get answers from your own notes.</div>
+                    <div class="mt-4 font-mono text-xs text-zinc-400 group-hover:text-brand-400 transition-colors">open console →</div>
+                </a>
             </aside>
         </div>
     </div>

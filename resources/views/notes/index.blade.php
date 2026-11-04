@@ -8,11 +8,8 @@
     <div class="max-w-6xl mx-auto space-y-5">
         <div class="flex flex-wrap items-end justify-between gap-3">
             <div>
-                <h1 class="page-title">{{ $heading }}</h1>
-                <p class="text-sm text-zinc-500 mt-1">
-                    {{ $notes->total() }} {{ Str::plural('note', $notes->total()) }}
-                    @if (request('q')) matching “{{ request('q') }}” @endif
-                </p>
+                <div class="eyebrow">{{ str_pad($notes->total(), 2, '0', STR_PAD_LEFT) }} {{ Str::plural('record', $notes->total()) }}@if (request('q')) · query “{{ request('q') }}”@endif</div>
+                <h1 class="page-title mt-1">{{ $heading }}</h1>
             </div>
             @unless ($trash)<a href="{{ route('notes.create') }}" class="btn-primary"><x-icon name="plus" class="w-4 h-4" /> New note</a>@endunless
         </div>
@@ -25,11 +22,11 @@
                 <input name="q" value="{{ request('q') }}" placeholder="{{ $semantic ? 'Search by meaning or keyword…' : 'Search title or content…' }}" class="input pl-9" data-search @change.stop>
             </div>
             @unless ($trash)
-                <div class="inline-flex rounded-lg border border-zinc-200 bg-white p-0.5 text-sm shadow-sm" title="Smart: keyword + meaning. Exact: literal text.">
+                <div class="inline-flex border border-zinc-300 bg-paper" title="Smart: keyword + meaning. Exact: literal text.">
                     @foreach (['smart' => $semantic ? 'Smart' : 'Ranked', 'exact' => 'Exact'] as $val => $label)
                         <label class="cursor-pointer">
                             <input type="radio" name="mode" value="{{ $val }}" class="sr-only peer" @checked(request('mode', 'smart') === $val)>
-                            <span class="block rounded-md px-3 py-1.5 text-zinc-500 peer-checked:bg-zinc-900 peer-checked:text-white transition">{{ $label }}</span>
+                            <span class="block px-3 py-[9px] font-mono text-[11px] uppercase tracking-wider text-zinc-500 peer-checked:bg-zinc-900 peer-checked:text-zinc-50 transition-colors">{{ $label }}</span>
                         </label>
                     @endforeach
                 </div>
@@ -46,8 +43,8 @@
         </form>
 
         @if (request('q') && ! $trash && request('mode', 'smart') === 'smart')
-            <p class="text-xs text-zinc-500 flex items-center gap-1.5">
-                <x-icon name="sparkles" class="w-3.5 h-3.5 text-violet-500" />
+            <p class="font-mono text-[11px] text-zinc-500 flex items-center gap-2">
+                <span class="led bg-brand-500"></span>
                 @if ($semantic) Ranked by relevance using keyword + meaning-based search.
                 @else Ranked by keyword. <a href="{{ route('settings.ai') }}" class="text-brand-600 hover:underline">Add an embedding model</a> to search by meaning.
                 @endif
@@ -56,8 +53,8 @@
 
         @if ($notes->isEmpty())
             <div class="card p-12 text-center">
-                <x-icon :name="$trash ? 'trash' : 'notes'" class="w-10 h-10 mx-auto text-zinc-300" />
-                <p class="mt-3 text-sm font-medium text-zinc-700">{{ $trash ? 'Trash is empty' : (request('q') || $filtersOn ? 'No matching notes' : 'No notes yet') }}</p>
+                <p class="font-mono text-xs text-zinc-400">// 0 results</p>
+                <p class="mt-2 text-sm font-medium text-zinc-700">{{ $trash ? 'Trash is empty' : (request('q') || $filtersOn ? 'No matching notes' : 'No notes yet') }}</p>
                 <p class="text-sm text-zinc-500 mt-1">{{ $trash ? 'Deleted notes appear here and can be restored.' : (request('q') || $filtersOn ? 'Try a different search or clear the filters.' : 'Capture your first idea to get started.') }}</p>
                 @if (! $trash && ! request('q') && ! $filtersOn)<a href="{{ route('notes.create') }}" class="btn-primary mt-4">New note</a>@endif
             </div>

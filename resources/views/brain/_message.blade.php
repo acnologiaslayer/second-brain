@@ -1,29 +1,33 @@
 @if ($m->role === 'user')
-    <div class="flex justify-end">
-        <div class="max-w-[80%] rounded-2xl rounded-br-md bg-brand-600 px-4 py-2.5 text-sm text-white whitespace-pre-wrap shadow-sm">{{ $m->content }}</div>
+    <div class="rise">
+        <div class="font-mono text-[10px] tracking-label text-zinc-400 mb-1.5">YOU <span class="text-zinc-300">· {{ $m->created_at?->format('H:i') }}</span></div>
+        <div class="border-l-2 border-zinc-900 pl-4 text-[15px] text-zinc-900 whitespace-pre-wrap">{{ $m->content }}</div>
     </div>
 @else
     @php $sources = $m->metadata['sources'] ?? []; @endphp
-    <div class="flex gap-3">
-        <span class="shrink-0 grid place-items-center w-8 h-8 rounded-full {{ $m->status === 'error' ? 'bg-red-100 text-red-600' : 'bg-gradient-to-br from-brand-500 to-violet-500 text-white' }}"><x-icon name="sparkles" class="w-4 h-4" /></span>
-        <div class="min-w-0 max-w-[85%] space-y-2">
-            @if ($m->status === 'error')
-                <div class="rounded-2xl rounded-tl-md border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-700">{{ $m->content }}
-                    <a href="{{ route('settings.ai') }}" class="block mt-1 text-xs font-medium underline">Check AI settings</a></div>
-            @else
-                <div class="md rounded-2xl rounded-tl-md border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-700 leading-relaxed shadow-sm" data-md>{{ $m->content }}</div>
-                <div class="flex flex-wrap items-center gap-1.5 text-xs">
-                    @foreach ($sources as $s)
-                        <a href="{{ route('notes.show', $s['note_id']) }}" class="inline-flex items-center gap-1 rounded-md border border-zinc-200 bg-white px-2 py-1 text-zinc-600 hover:border-brand-300 hover:text-brand-700 transition" title="{{ ($s['method'] ?? '') === 'semantic' ? 'Matched by meaning' : 'Matched by keyword' }}">
-                            <x-icon name="notes" class="w-3 h-3" /> {{ Str::limit($s['title'], 32) }}
-                            @if (($s['method'] ?? null) === 'semantic')<span class="text-violet-500">✦</span>@endif
-                        </a>
-                    @endforeach
-                    <a href="{{ route('brain.messages.save', $m) }}" class="inline-flex items-center gap-1 rounded-md px-2 py-1 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 transition">
-                        <x-icon name="save" class="w-3.5 h-3.5" /> Save to notes</a>
-                    <button type="button" onclick="navigator.clipboard.writeText(this.closest('.space-y-2').querySelector('[data-md]').innerText); this.textContent='Copied'" class="rounded-md px-2 py-1 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800">Copy</button>
-                </div>
-            @endif
+    <div class="rise">
+        <div class="font-mono text-[10px] tracking-label mb-1.5 flex items-center gap-2 {{ $m->status === 'error' ? 'text-err' : 'text-brand-600' }}">
+            <span class="led {{ $m->status === 'error' ? 'bg-err' : 'bg-brand-500' }}"></span>
+            BRAIN.AI <span class="text-zinc-300">· {{ $m->created_at?->format('H:i') }}@if (! empty($m->metadata['model'])) · {{ $m->metadata['model'] }}@endif</span>
         </div>
+        @if ($m->status === 'error')
+            <div class="card border-err/40 bg-err/5 px-4 py-3 font-mono text-[13px] text-err">
+                ERR: {{ $m->content }}
+                <a href="{{ route('settings.ai') }}" class="block mt-1 text-xs underline">→ check AI settings</a>
+            </div>
+        @else
+            <div class="card px-5 py-4 text-[14.5px] text-zinc-800 leading-relaxed" data-md>{{ $m->content }}</div>
+            <div class="mt-2 flex flex-wrap items-center gap-1.5">
+                @if ($sources)<span class="font-mono text-[10px] tracking-wider text-zinc-400 mr-1">SOURCES</span>@endif
+                @foreach ($sources as $s)
+                    <a href="{{ route('notes.show', $s['note_id']) }}" class="badge border-zinc-300 bg-paper text-zinc-700 normal-case tracking-normal hover:border-zinc-900 hover:text-brand-600 transition-colors" title="{{ ($s['method'] ?? '') === 'semantic' ? 'Matched by meaning' : 'Matched by keyword' }}">
+                        <span class="text-zinc-400">#{{ str_pad($s['note_id'], 3, '0', STR_PAD_LEFT) }}</span>&nbsp;{{ Str::limit($s['title'], 30) }}@if (($s['method'] ?? null) === 'semantic')<span class="text-brand-500 ml-1">≈</span>@endif
+                    </a>
+                @endforeach
+                <span class="flex-1"></span>
+                <a href="{{ route('brain.messages.save', $m) }}" class="btn-ghost btn-sm"><x-icon name="save" class="w-3.5 h-3.5" /> Save to notes</a>
+                <button type="button" onclick="navigator.clipboard.writeText(this.closest('.rise').querySelector('[data-md]').innerText); this.textContent='Copied'" class="btn-ghost btn-sm">Copy</button>
+            </div>
+        @endif
     </div>
 @endif
