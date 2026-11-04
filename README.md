@@ -7,7 +7,8 @@ Capture, organize, search and connect notes, then chat with **Brain AI**, an ass
 - Authentication (Laravel Breeze) with strict per-user data isolation (policies on every resource)
 - Notes CRUD with categories, tags, favorites, pinning, soft-delete trash and restore
 - Quick Capture inbox, keyword search and filters (category, tag, type, favorites)
-- Note-to-note links (bi-directional view)
+- Note-to-note links (bi-directional view) and **AI-suggested links** with reasons (similar meaning, shared tags, same category)
+- **Knowledge graph**: interactive map of your notes (your links, similar meaning, shared tags)
 - **Brain AI** chat with saved conversation history
   - Retrieval over note chunks, scoped to the current user
   - Source references shown under each answer
@@ -48,6 +49,14 @@ Set an embedding model in *AI Settings* (e.g. Ollama `nomic-embed-text`, or Gemi
 - **Ollama (local, free):** install from ollama.com, run `ollama pull llama3.2`, keep defaults.
 - **Cloud:** open *AI Settings*, choose "OpenAI-compatible", set base URL, model and API key, then *Test connection*.
 
+## Documentation
+- [Architecture, ERD and security](docs/ARCHITECTURE.md)
+- [Test plan and results](docs/TESTING.md)
+- [User guide and demo script](docs/USER_GUIDE.md)
+- [Free deployment](DEPLOY.md)
+
+Demo data: `php artisan db:seed --class=DemoSeeder` (login demo@example.com / password).
+
 ## Free hosting
 See **[DEPLOY.md](DEPLOY.md)**: Render (app) + Aiven (MySQL) + Groq (chat) + Gemini (embeddings), all free, no credit card.
 
@@ -59,6 +68,5 @@ Covers CRUD, search, cross-user access denial (User A vs User B), retrieval grou
 
 ## Roadmap
 - [x] Phase 1-4: foundation, knowledge base, AI chat, brain integration
-- [x] Phase 5a: embeddings / semantic search
-- [ ] Phase 5b: knowledge graph view
-- [ ] Phase 6: final testing, documentation and demo
+- [x] Phase 5: semantic search, AI-suggested links, knowledge graph
+- [x] Phase 6: testing, documentation, demo data
