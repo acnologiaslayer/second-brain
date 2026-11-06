@@ -3,7 +3,9 @@
 Run all tests: `php artisan test` (Pest, in-memory SQLite, AI calls faked with `Http::fake`).
 They also run on every push via GitHub Actions (`.github/workflows/tests.yml`).
 
-**Result: 45 tests, 138 assertions, all passing.**
+**Result: 65 tests, 248 assertions, all passing on both SQLite and MySQL 8** (CI runs both).
+
+The spec's acceptance criteria AC-01 to AC-12 each have a dedicated test in `tests/Feature/AcceptanceCriteriaTest.php`. See [SPEC_COMPLIANCE.md](SPEC_COMPLIANCE.md) for the full requirement-by-requirement matrix.
 
 AI providers are faked in automated tests so results are deterministic and require no API keys.
 The semantic tests use a small fake embedding model that places synonyms ("car", "vehicle",

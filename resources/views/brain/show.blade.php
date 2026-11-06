@@ -33,10 +33,18 @@
                         <button class="md:hidden btn-ghost p-1.5" @click="list = !list"><x-icon name="menu" class="w-4 h-4" /></button>
                         <span class="led bg-ok"></span>
                         <h2 id="conv-title" class="text-sm font-medium text-zinc-900 truncate">{{ $conversation->title }}</h2>
-                        @if ($conversation->model)<span class="badge border-zinc-300 text-zinc-500 hidden sm:inline-flex">{{ $conversation->model }}</span>@endif
                     </div>
-                    <form method="POST" action="{{ route('brain.destroy', $conversation) }}" onsubmit="return confirm('Delete this session?')">@csrf @method('DELETE')
-                        <button class="btn-ghost btn-sm text-zinc-400 hover:text-err" title="Delete session"><x-icon name="trash" class="w-4 h-4" /></button></form>
+                    @php $cfg = app(\App\Services\AI\AIProviderManager::class)->settingsFor(auth()->user()); @endphp
+                    <div class="flex items-center gap-2">
+                        <a href="{{ route('settings.ai') }}" class="hidden sm:inline-flex badge border-zinc-300 text-zinc-600 gap-1.5 hover:border-zinc-900" title="Active provider and model">
+                            <span class="led bg-ok"></span>{{ \App\Models\AISetting::PROVIDERS[$cfg->provider]['label'] ?? $cfg->provider }} · {{ $cfg->model ?: 'no model' }}
+                        </a>
+                        <span class="hidden md:inline-flex badge {{ $cfg->embedding_model ? 'border-brand-300 text-brand-700' : 'border-zinc-300 text-zinc-500' }}" title="Retrieval method used for answers">
+                            {{ $cfg->embedding_model ? 'retrieval: keyword + semantic' : 'retrieval: keyword' }}
+                        </span>
+                        <form method="POST" action="{{ route('brain.destroy', $conversation) }}" onsubmit="return confirm('Delete this session?')">@csrf @method('DELETE')
+                            <button class="btn-ghost btn-sm text-zinc-400 hover:text-err" title="Delete session"><x-icon name="trash" class="w-4 h-4" /></button></form>
+                    </div>
                 </div>
 
                 <div id="messages" class="flex-1 overflow-y-auto">

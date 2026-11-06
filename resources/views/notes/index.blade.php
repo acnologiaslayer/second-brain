@@ -19,7 +19,7 @@
             @if (request('favorites'))<input type="hidden" name="favorites" value="1">@endif
             <div class="relative flex-1 min-w-[220px]">
                 <x-icon name="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
-                <input name="q" value="{{ request('q') }}" placeholder="{{ $semantic ? 'Search by meaning or keyword…' : 'Search title or content…' }}" class="input pl-9" data-search @change.stop>
+                <input name="q" value="{{ request('q') }}" placeholder="{{ $semantic ? 'Search by meaning or keyword…' : 'Keyword search in title or content…' }}" class="input pl-9" data-search @change.stop>
             </div>
             @unless ($trash)
                 <div class="inline-flex border border-zinc-300 bg-paper" title="Smart: keyword + meaning. Exact: literal text.">
@@ -35,6 +35,13 @@
                 @foreach ($categories as $c)<option value="{{ $c->id }}" @selected(request('category') == $c->id)>{{ $c->name }}</option>@endforeach</select>
             <select name="tag" class="input w-auto"><option value="">All tags</option>
                 @foreach ($tags as $t)<option value="{{ $t->id }}" @selected(request('tag') == $t->id)>#{{ $t->name }}</option>@endforeach</select>
+            @if (! request('q') || request('mode') === 'exact' || $trash)
+                <select name="sort" class="input w-auto" title="Sort">
+                    @foreach (['updated' => 'Recently updated', 'created' => 'Newest first', 'oldest' => 'Least recently updated', 'title' => 'Title A–Z'] as $v => $l)
+                        <option value="{{ $v }}" @selected(request('sort', 'updated') === $v)>{{ $l }}</option>
+                    @endforeach
+                </select>
+            @endif
             <select name="type" class="input w-auto"><option value="">All types</option>
                 @foreach (\App\Models\Note::TYPES as $t)<option value="{{ $t }}" @selected(request('type') == $t)>{{ ucfirst($t) }}</option>@endforeach</select>
             @if ($filtersOn || request('q'))

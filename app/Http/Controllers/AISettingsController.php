@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AISetting;
+use App\Rules\SafeAiEndpoint;
 use App\Services\AI\AIProviderException;
 use App\Services\AI\AIProviderManager;
 use App\Services\Knowledge\EmbeddingService;
@@ -27,6 +28,7 @@ class AISettingsController extends Controller
     {
         $setting = $this->fill($request);
         $setting->save();
+        $request->user()->setRelation('aiSetting', $setting); // keep the in-memory user consistent
         return back()->with('status', 'AI settings saved.');
     }
 
@@ -70,12 +72,12 @@ class AISettingsController extends Controller
     {
         $data = $request->validate([
             'provider' => ['required', Rule::in(array_keys(AISetting::PROVIDERS))],
-            'base_url' => ['nullable', 'url', 'max:500'],
+            'base_url' => ['nullable', 'url', 'max:500', new SafeAiEndpoint],
             'model' => ['required', 'string', 'max:150'],
             'api_key' => ['nullable', 'string', 'max:500'],
             'clear_api_key' => ['sometimes', 'boolean'],
             'embedding_provider' => ['nullable', Rule::in(array_keys(AISetting::PROVIDERS))],
-            'embedding_base_url' => ['nullable', 'url', 'max:500'],
+            'embedding_base_url' => ['nullable', 'url', 'max:500', new SafeAiEndpoint],
             'embedding_model' => ['nullable', 'string', 'max:150'],
             'embedding_api_key' => ['nullable', 'string', 'max:500'],
             'clear_embedding_api_key' => ['sometimes', 'boolean'],

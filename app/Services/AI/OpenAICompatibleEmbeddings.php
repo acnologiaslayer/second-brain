@@ -15,7 +15,7 @@ class OpenAICompatibleEmbeddings implements EmbeddingProviderInterface
     public function embed(array $texts): array
     {
         if ($texts === []) return [];
-        $req = Http::timeout(60)->acceptJson();
+        $req = Http::timeout(60)->withoutRedirecting()->acceptJson();
         if ($this->apiKey) $req = $req->withToken($this->apiKey);
         try {
             $res = $req->post(rtrim($this->baseUrl, '/').'/embeddings', ['model' => $this->model, 'input' => array_values($texts)]);

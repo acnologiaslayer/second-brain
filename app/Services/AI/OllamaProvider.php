@@ -19,7 +19,7 @@ class OllamaProvider implements AIProviderInterface
     public function testConnection(): ProviderHealthResult
     {
         try {
-            $res = Http::timeout(10)->get($this->baseUrl.'/api/tags');
+            $res = Http::timeout(10)->withoutRedirecting()->get($this->baseUrl.'/api/tags');
         } catch (ConnectionException $e) {
             return new ProviderHealthResult(false, 'Could not reach Ollama at '.$this->baseUrl.'. Is `ollama serve` running?');
         }
@@ -37,12 +37,12 @@ class OllamaProvider implements AIProviderInterface
     public function generateResponse(array $messages, array $options = []): AIResponse
     {
         try {
-            $res = Http::timeout($this->timeout)->post($this->baseUrl.'/api/chat', [
+            $res = Http::timeout($this->timeout)->withoutRedirecting()->post($this->baseUrl.'/api/chat', [
                 'model' => $this->model,
                 'messages' => $messages,
                 'stream' => false,
                 'options' => ['temperature' => $options['temperature'] ?? 0.3],
-            ]);
+            ] + (! empty($options['json']) ? ['format' => 'json'] : []));
         } catch (ConnectionException $e) {
             throw new AIProviderException('Ollama is unreachable. Start it or update AI settings.');
         }

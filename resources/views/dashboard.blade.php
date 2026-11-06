@@ -38,7 +38,7 @@
         </div>
 
         @if ($inbox)
-            <a href="{{ route('notes.index', ['type' => 'inbox']) }}" class="flex items-center gap-3 card px-4 py-3 text-sm hover:border-zinc-900 transition-colors">
+            <a href="{{ route('capture.index') }}" class="flex items-center gap-3 card px-4 py-3 text-sm hover:border-zinc-900 transition-colors">
                 <span class="led bg-warn led-pulse"></span>
                 <span class="font-mono text-[10.5px] font-semibold tracking-wider text-zinc-400">INBOX</span>
                 <span class="flex-1 text-zinc-700"><strong class="text-zinc-900">{{ $inbox }}</strong> captured {{ Str::plural('item', $inbox) }} waiting to be organized</span>

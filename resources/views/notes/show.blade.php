@@ -19,7 +19,10 @@
                     <div class="mt-2 whitespace-pre-wrap text-sm text-zinc-700 leading-relaxed">{{ session('summary') }}</div>
                     <div class="mt-3 flex items-center justify-between">
                         <span class="font-mono text-[11px] text-zinc-500">// suggestion. verify before relying on it</span>
-                        <a class="btn-secondary btn-sm" href="{{ route('notes.create', ['title' => 'Summary: '.$note->title, 'content' => session('summary')]) }}">Save as note</a>
+                        <form method="POST" action="{{ route('notes.summary-as-note', $note) }}">@csrf
+                            <input type="hidden" name="summary" value="{{ session('summary') }}">
+                            <button class="btn-secondary btn-sm">Review &amp; save as note</button>
+                        </form>
                     </div>
                 </div>
             @endif

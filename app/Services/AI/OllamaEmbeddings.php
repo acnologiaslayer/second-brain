@@ -16,7 +16,7 @@ class OllamaEmbeddings implements EmbeddingProviderInterface
     {
         if ($texts === []) return [];
         try {
-            $res = Http::timeout(120)->post(rtrim($this->baseUrl, '/').'/api/embed', ['model' => $this->model, 'input' => array_values($texts)]);
+            $res = Http::timeout(120)->withoutRedirecting()->post(rtrim($this->baseUrl, '/').'/api/embed', ['model' => $this->model, 'input' => array_values($texts)]);
         } catch (ConnectionException) {
             throw new AIProviderException('Ollama unreachable for embeddings.');
         }

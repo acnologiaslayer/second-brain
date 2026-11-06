@@ -7,10 +7,9 @@ use App\Models\Conversation;
 use App\Models\Message;
 use App\Services\AI\AIProviderException;
 use App\Services\AI\AIProviderManager;
-use App\Services\Knowledge\NoteIndexingService;
+use App\Services\Knowledge\NoteProposalService;
 use App\Services\Knowledge\PromptBuilder;
 use App\Services\Knowledge\RetrievalService;
-use Illuminate\Http\Request;
 
 class MessageController extends Controller
 {
@@ -25,9 +24,16 @@ class MessageController extends Controller
             $conversation->update(['title' => str($question)->limit(60)->toString()]);
         }
 
-        $sources = $retrieval->retrieve($user, $question);
-        $messages = $prompts->messages($prompts->system($sources), $conversation->messages()->get());
-        $sourceMeta = $sources->map(fn ($s) => ['note_id' => $s['chunk']->note_id, 'title' => $s['chunk']->note->title, 'score' => $s['score'], 'method' => $s['method']])->all();
+        // RAG (spec 8.2): user-scoped retrieval, bounded context, structured source references.
+        [$context, $sources] = $prompts->context($retrieval->retrieve($user, $question));
+        $messages = $prompts->messages($context, $conversation->messages()->get());
+        $sourceMeta = $sources->map(fn ($s) => [
+            'note_id' => $s['chunk']->note_id,
+            'chunk_id' => $s['chunk']->id,
+            'title' => $s['chunk']->note->title,
+            'score' => $s['score'],
+            'method' => $s['method'],
+        ])->all();
 
         try {
             $settings = $ai->settingsFor($user);
@@ -51,18 +57,16 @@ class MessageController extends Controller
         return redirect()->route('brain.show', $conversation);
     }
 
-    /** Save an assistant reply as a note, only after the user reviews and confirms via the note form. */
-    public function saveAsNote(Request $request, Message $message)
+    /**
+     * Feed My Brain (spec 9): build a proposed note (title, body, suggested category + tags)
+     * and show it in the editable note form. Nothing is saved until the user confirms.
+     */
+    public function saveAsNote(Message $message, NoteProposalService $proposals)
     {
         $this->authorize('view', $message->conversation);
         abort_unless($message->role === 'assistant' && $message->status !== 'error', 422);
 
-        if ($request->isMethod('get')) {
-            return redirect()->route('notes.create', [
-                'title' => 'Brain AI: '.str($message->conversation->title)->limit(60),
-                'content' => $message->content,
-            ]);
-        }
-        abort(405);
+        $proposal = $proposals->propose(request()->user(), $message->content, 'Brain AI: '.$message->conversation->title);
+        return redirect()->route('notes.create')->with('proposal', $proposal + ['origin' => 'Brain AI answer']);
     }
 }

@@ -47,12 +47,21 @@
 
         <section class="card card-pad">
             <h2 class="eyebrow">Tags · {{ str_pad($tags->count(), 2, '0', STR_PAD_LEFT) }}</h2>
-            <div class="mt-3 flex flex-wrap gap-2">
+            <form method="POST" action="{{ route('tags.store') }}" class="mt-3 flex gap-2 max-w-sm">
+                @csrf
+                <input name="name" placeholder="New tag" required maxlength="50" class="input">
+                <button class="btn-secondary shrink-0"><x-icon name="plus" class="w-4 h-4" /> Add</button>
+            </form>
+            <div class="mt-4 flex flex-wrap gap-2">
                 @forelse ($tags as $t)
-                    <a href="{{ route('notes.index', ['tag' => $t->id]) }}" class="inline-flex items-center gap-1.5 border border-zinc-300 bg-paper px-2.5 py-1 font-mono text-[12px] text-zinc-700 hover:border-zinc-900 hover:text-brand-600 transition-colors">
-                        #{{ $t->name }} <span class="text-zinc-400">{{ $t->notes_count }}</span></a>
+                    <span class="inline-flex items-center border border-zinc-300 bg-paper font-mono text-[12px] text-zinc-700">
+                        <a href="{{ route('notes.index', ['tag' => $t->id]) }}" class="px-2.5 py-1 hover:text-brand-600">#{{ $t->name }} <span class="text-zinc-400">{{ $t->notes_count }}</span></a>
+                        <form method="POST" action="{{ route('tags.destroy', $t) }}" onsubmit="return confirm('Delete tag #{{ $t->name }}? Notes are kept.')">@csrf @method('DELETE')
+                            <button class="px-1.5 py-1 border-l border-zinc-200 text-zinc-400 hover:text-err" title="Delete tag">×</button>
+                        </form>
+                    </span>
                 @empty
-                    <p class="text-sm text-zinc-400">Add tags while editing a note.</p>
+                    <p class="text-sm text-zinc-400">Add tags here or while editing a note.</p>
                 @endforelse
             </div>
         </section>

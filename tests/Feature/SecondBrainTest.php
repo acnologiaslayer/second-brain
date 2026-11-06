@@ -78,14 +78,6 @@ test('provider failure is shown as an error message, not a crash', function () {
     expect($conv->messages()->where('role', 'assistant')->first()->status)->toBe('error');
 });
 
-test('save to brain prefills note form for review', function () {
-    $u = User::factory()->create();
-    $conv = $u->conversations()->create(['title' => 'Chat']);
-    $m = $conv->messages()->create(['role' => 'assistant', 'content' => 'Useful answer']);
-    $this->actingAs($u)->get("/brain/messages/{$m->id}/save-as-note")->assertRedirectContains('/notes/create');
-    $this->get('/notes/create?content=Useful+answer')->assertSee('Review and edit it before saving');
-});
-
 test('api key is stored encrypted and never rendered', function () {
     $u = User::factory()->create();
     $this->actingAs($u)->put('/settings/ai', ['provider' => 'openai_compatible', 'model' => 'gpt-4o-mini', 'api_key' => 'sk-supersecret'])->assertRedirect();

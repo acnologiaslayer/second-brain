@@ -20,7 +20,7 @@ class OpenAICompatibleProvider implements AIProviderInterface
 
     protected function http(): PendingRequest
     {
-        $req = Http::timeout($this->timeout)->acceptJson();
+        $req = Http::timeout($this->timeout)->withoutRedirecting()->acceptJson();
         return $this->apiKey ? $req->withToken($this->apiKey) : $req;
     }
 
@@ -49,7 +49,7 @@ class OpenAICompatibleProvider implements AIProviderInterface
                 'messages' => $messages,
                 'temperature' => $options['temperature'] ?? 0.3,
                 'stream' => false,
-            ]);
+            ] + (! empty($options['json']) ? ['response_format' => ['type' => 'json_object']] : []));
         } catch (ConnectionException $e) {
             throw new AIProviderException('The AI endpoint is unreachable. Check AI settings.');
         }

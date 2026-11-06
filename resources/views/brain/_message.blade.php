@@ -25,7 +25,9 @@
                     </a>
                 @endforeach
                 <span class="flex-1"></span>
-                <a href="{{ route('brain.messages.save', $m) }}" class="btn-ghost btn-sm"><x-icon name="save" class="w-3.5 h-3.5" /> Save to notes</a>
+                <form method="POST" action="{{ route('brain.messages.save', $m) }}" x-data="{ busy: false }" @submit="busy = true">@csrf
+                    <button class="btn-ghost btn-sm" :disabled="busy"><x-icon name="save" class="w-3.5 h-3.5" /> <span x-text="busy ? 'Preparing…' : 'Save to notes'">Save to notes</span></button>
+                </form>
                 <button type="button" onclick="navigator.clipboard.writeText(this.closest('.rise').querySelector('[data-md]').innerText); this.textContent='Copied'" class="btn-ghost btn-sm">Copy</button>
             </div>
         @endif

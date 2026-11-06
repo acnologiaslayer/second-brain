@@ -16,6 +16,7 @@
         $sections = [
             'Workspace' => [
                 ['dashboard', 'Home', 'home', request()->routeIs('dashboard'), '01'],
+                ['capture.index', 'Inbox', 'bolt', request()->routeIs('capture.*'), '··'],
                 ['notes.index', 'Notes', 'notes', request()->routeIs('notes.*') && ! request('trash') && ! request('favorites'), '02'],
                 ['brain.index', 'Brain AI', 'chat', request()->routeIs('brain.*'), '03'],
                 ['graph', 'Graph', 'graph', request()->routeIs('graph'), '04'],
@@ -113,7 +114,7 @@
             @else
                 <form action="{{ route('notes.index') }}" method="GET" class="flex-1 max-w-lg md:ml-6 relative">
                     <x-icon name="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
-                    <input name="q" placeholder="Search notes by meaning or keyword" class="input pl-9 pr-10" data-search>
+                    <input name="q" placeholder="{{ $ai->embedding_model ? 'Search notes by meaning or keyword' : 'Keyword search in your notes' }}" class="input pl-9 pr-10" data-search>
                     <span class="kbd hidden sm:block absolute right-2.5 top-1/2 -translate-y-1/2">/</span>
                 </form>
             @endif

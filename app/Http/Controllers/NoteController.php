@@ -34,7 +34,17 @@ class NoteController extends Controller
             ->when($request->filled('type'), fn ($q) => $q->where('note_type', $request->string('type')))
             ->when($request->boolean('favorites'), fn ($q) => $q->where('is_favorite', true))
             ->when($ranked?->isNotEmpty(), fn ($b) => $b->orderByRaw('CASE id '.$ranked->keys()->map(fn ($id, $i) => 'WHEN '.(int) $id.' THEN '.$i)->implode(' ').' END'))
-            ->when($ranked === null, fn ($b) => $b->orderByDesc('is_pinned')->latest('updated_at'))
+            ->when($ranked === null, function ($b) use ($request) {
+                // Sorting (spec 12). Pinned notes stay on top except when sorting by title.
+                [$col, $dir] = match ($request->input('sort')) {
+                    'created' => ['created_at', 'desc'],
+                    'oldest' => ['updated_at', 'asc'],
+                    'title' => ['title', 'asc'],
+                    default => ['updated_at', 'desc'],
+                };
+                if ($request->input('sort') !== 'title') $b->orderByDesc('is_pinned');
+                $b->orderBy($col, $dir);
+            })
             ->paginate(12)->withQueryString();
 
         return view('notes.index', [
@@ -49,8 +59,17 @@ class NoteController extends Controller
 
     public function create(Request $request)
     {
+        // A proposal (from Brain AI or a summary) prefills the form for review. Never saved automatically.
+        $p = session('proposal');
+        $note = new Note([
+            'note_type' => $p['note_type'] ?? 'text',
+            'title' => $p['title'] ?? $request->string('title'),
+            'content' => $p['content'] ?? $request->string('content'),
+            'category_id' => $p['category_id'] ?? null,
+        ]);
         return view('notes.form', [
-            'note' => new Note(['note_type' => 'text', 'title' => $request->string('title'), 'content' => $request->string('content')]),
+            'note' => $note,
+            'proposal' => $p,
             'categories' => $request->user()->categories()->orderBy('name')->get(),
         ]);
     }
@@ -61,15 +80,6 @@ class NoteController extends Controller
         $this->syncTags($request, $note);
         $this->indexer->index($note);
         return redirect()->route('notes.show', $note)->with('status', 'Note saved.');
-    }
-
-    public function quickCapture(Request $request)
-    {
-        $data = $request->validate(['content' => ['required', 'string', 'max:20000']]);
-        $title = str($data['content'])->before("\n")->limit(80)->toString();
-        $note = $request->user()->notes()->create(['title' => $title ?: 'Quick capture', 'content' => $data['content'], 'note_type' => 'inbox']);
-        $this->indexer->index($note);
-        return back()->with('status', 'Captured to inbox.');
     }
 
     public function show(Note $note, RelatedNotesService $related)
@@ -135,6 +145,16 @@ class NoteController extends Controller
             return back()->with('error', $e->getMessage());
         }
         return back()->with('summary', $summary);
+    }
+
+    /** Turn a fresh AI summary into a proposed note for review (spec 9). */
+    public function summaryAsNote(Request $request, Note $note, \App\Services\Knowledge\NoteProposalService $proposals)
+    {
+        $this->authorize('view', $note);
+        $data = $request->validate(['summary' => ['required', 'string', 'max:20000']]);
+        $proposal = $proposals->propose($request->user(), $data['summary'], 'Summary: '.$note->title);
+        $proposal['category_id'] ??= $note->category_id;
+        return redirect()->route('notes.create')->with('proposal', $proposal + ['origin' => 'AI summary of “'.$note->title.'”']);
     }
 
     public function link(Request $request, Note $note)

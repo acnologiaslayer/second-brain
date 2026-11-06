@@ -35,6 +35,8 @@ services:
       - key: DB_SSL_CA_PEM
         sync: false        # paste Aiven CA certificate contents
       # Free AI defaults (users can override in AI Settings)
+      - key: AI_ALLOW_LOCAL_ENDPOINTS
+        value: "false"
       - key: AI_PROVIDER
         value: openai_compatible
       - key: AI_BASE_URL

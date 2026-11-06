@@ -32,6 +32,9 @@ class AIProviderManager
         if (! $baseUrl || ! $s->model) {
             throw new AIProviderException('AI is not configured yet. Set an endpoint and model in AI Settings.');
         }
+        if ($error = \App\Rules\SafeAiEndpoint::check($baseUrl)) {
+            throw new AIProviderException('Blocked endpoint: '.$error);
+        }
 
         return match ($s->provider) {
             'ollama' => new OllamaProvider($baseUrl, $s->model),
@@ -54,7 +57,7 @@ class AIProviderManager
         $provider = $s->embedding_provider ?: $s->provider;
         $baseUrl = $s->embedding_base_url ?: ($s->embedding_provider ? null : $s->base_url) ?: (AISetting::PROVIDERS[$provider]['base_url'] ?? null);
         $key = $s->embedding_api_key_encrypted ?: ($s->embedding_provider && $s->embedding_provider !== $s->provider ? null : $s->api_key_encrypted);
-        if (! $baseUrl) return null;
+        if (! $baseUrl || \App\Rules\SafeAiEndpoint::check($baseUrl)) return null;
 
         return match ($provider) {
             'ollama' => new OllamaEmbeddings($baseUrl, $s->embedding_model),

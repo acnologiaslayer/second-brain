@@ -150,6 +150,7 @@ Integrity rules: all ownership foreign keys cascade on user deletion; deleting a
 | XSS | Blade `{{ }}` escaping; chat markdown renderer escapes before formatting | views, `brain/show.blade.php` |
 | CSRF | Laravel CSRF tokens on all forms and the chat fetch call | layouts |
 | Abuse of AI endpoint | Rate limits: 20 chat messages/min, 3 re-index runs/min | `routes/web.php` |
+| SSRF via AI endpoint setting | HTTPS required for remote hosts, private/reserved/metadata IPs blocked (DNS-checked), redirects disabled, local endpoints switchable off | `app/Rules/SafeAiEndpoint.php` |
 | Untrusted AI output | Save-to-brain opens the note form for review; summaries are labelled as suggestions | `MessageController@saveAsNote` |
 
 ## 5. Route map
@@ -168,6 +169,9 @@ Integrity rules: all ownership foreign keys cascade on user deletion; deleting a
 | GET | /graph | Knowledge graph |
 | GET/POST/DELETE | /brain, /brain/conversations/... | Brain AI sessions |
 | POST | /brain/conversations/{c}/messages | Ask a question (JSON or form) |
-| GET | /brain/messages/{m}/save-as-note | Review AI answer in note form |
+| POST | /brain/messages/{m}/save-as-note | Propose a note from an AI answer (preview, not saved) |
+| POST | /notes/{note}/summary-as-note | Propose a note from an AI summary |
+| GET/POST | /capture, /capture/{note}/convert | Inbox page, convert item to note |
+| GET/POST/DELETE | /tags | Manage tags |
 | GET/PUT | /settings/ai | AI configuration |
 | POST | /settings/ai/test, /test-embeddings, /reindex | Connectivity checks, rebuild vectors |

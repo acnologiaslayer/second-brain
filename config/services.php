@@ -41,6 +41,10 @@ return [
         'base_url' => env('AI_BASE_URL', 'http://localhost:11434'),
         'model' => env('AI_MODEL', 'llama3.2'),
         'api_key' => env('AI_API_KEY'),
+        // Endpoint safety (spec 11, Network). Disable local endpoints on public deployments.
+        'allow_local_endpoints' => (bool) env('AI_ALLOW_LOCAL_ENDPOINTS', true),
+        'allowed_hosts' => env('AI_ALLOWED_HOSTS', ''),
+        'max_context_chars' => (int) env('AI_MAX_CONTEXT_CHARS', 6000),
         // Semantic search. Leave AI_EMBEDDING_MODEL empty to use keyword search only.
         'embedding_provider' => env('AI_EMBEDDING_PROVIDER'),
         'embedding_base_url' => env('AI_EMBEDDING_BASE_URL'),

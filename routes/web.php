@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\AISettingsController;
+use App\Http\Controllers\CaptureController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\TagController;
 use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GraphController;
@@ -15,11 +17,14 @@ Route::get('/', fn () => auth()->check() ? redirect()->route('dashboard') : view
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    Route::post('/capture', [NoteController::class, 'quickCapture'])->name('capture');
+    Route::get('/capture', [CaptureController::class, 'index'])->name('capture.index');
+    Route::post('/capture', [CaptureController::class, 'store'])->name('capture');
+    Route::post('/capture/{note}/convert', [CaptureController::class, 'convert'])->name('capture.convert');
     Route::post('/notes/{id}/restore', [NoteController::class, 'restore'])->name('notes.restore');
     Route::delete('/notes/{id}/force', [NoteController::class, 'forceDelete'])->name('notes.force');
     Route::post('/notes/{note}/toggle/{flag}', [NoteController::class, 'toggle'])->name('notes.toggle');
     Route::post('/notes/{note}/summarize', [NoteController::class, 'summarize'])->name('notes.summarize');
+    Route::post('/notes/{note}/summary-as-note', [NoteController::class, 'summaryAsNote'])->middleware('throttle:20,1')->name('notes.summary-as-note');
     Route::post('/notes/{note}/links', [NoteController::class, 'link'])->name('notes.link');
     Route::resource('notes', NoteController::class);
 
@@ -29,13 +34,16 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
     Route::put('/categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
     Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
+    Route::get('/tags', [TagController::class, 'index'])->name('tags.index');
+    Route::post('/tags', [TagController::class, 'store'])->name('tags.store');
+    Route::delete('/tags/{tag}', [TagController::class, 'destroy'])->name('tags.destroy');
 
     Route::get('/brain', [ConversationController::class, 'index'])->name('brain.index');
     Route::post('/brain/conversations', [ConversationController::class, 'store'])->name('brain.store');
     Route::get('/brain/conversations/{conversation}', [ConversationController::class, 'show'])->name('brain.show');
     Route::delete('/brain/conversations/{conversation}', [ConversationController::class, 'destroy'])->name('brain.destroy');
     Route::post('/brain/conversations/{conversation}/messages', [MessageController::class, 'store'])->middleware('throttle:20,1')->name('brain.messages.store');
-    Route::get('/brain/messages/{message}/save-as-note', [MessageController::class, 'saveAsNote'])->name('brain.messages.save');
+    Route::post('/brain/messages/{message}/save-as-note', [MessageController::class, 'saveAsNote'])->middleware('throttle:20,1')->name('brain.messages.save');
 
     Route::get('/settings/ai', [AISettingsController::class, 'edit'])->name('settings.ai');
     Route::put('/settings/ai', [AISettingsController::class, 'update'])->name('settings.ai.update');

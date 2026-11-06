@@ -3,13 +3,27 @@ on: [push, pull_request]
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        db: [sqlite, mysql]
+    services:
+      mysql:
+        image: mysql:8.0
+        env: { MYSQL_ROOT_PASSWORD: secret, MYSQL_DATABASE: testing }
+        ports: ['3306:3306']
+        options: --health-cmd="mysqladmin ping -psecret" --health-interval=5s --health-timeout=5s --health-retries=20
     steps:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
-        with: { php-version: '8.3', extensions: 'mbstring, pdo_sqlite' }
+        with: { php-version: '8.3', extensions: 'mbstring, pdo_sqlite, pdo_mysql' }
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
       - run: composer install --no-interaction --prefer-dist
       - run: npm ci && npm run build
       - run: cp .env.example .env && php artisan key:generate
+      - name: Use MySQL for tests
+        if: matrix.db == 'mysql'
+        run: |
+          sed -i 's|<env name="DB_CONNECTION" value="sqlite"/>|<env name="DB_CONNECTION" value="mysql"/><env name="DB_HOST" value="127.0.0.1"/><env name="DB_PORT" value="3306"/><env name="DB_USERNAME" value="root"/><env name="DB_PASSWORD" value="secret"/>|' phpunit.xml
+          sed -i 's|<env name="DB_DATABASE" value=":memory:"/>|<env name="DB_DATABASE" value="testing"/>|' phpunit.xml
       - run: php artisan test

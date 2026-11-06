@@ -6,13 +6,13 @@ Capture, organize, search and connect notes, then chat with **Brain AI**, an ass
 ## Features
 - Authentication (Laravel Breeze) with strict per-user data isolation (policies on every resource)
 - Notes CRUD with categories, tags, favorites, pinning, soft-delete trash and restore
-- Quick Capture inbox, keyword search and filters (category, tag, type, favorites)
+- Quick Capture inbox page with convert-to-note, keyword search, filters (category, tag, type, favorites) and sorting
 - Note-to-note links (bi-directional view) and **AI-suggested links** with reasons (similar meaning, shared tags, same category)
 - **Knowledge graph**: interactive map of your notes (your links, similar meaning, shared tags)
 - **Brain AI** chat with saved conversation history
   - Retrieval over note chunks, scoped to the current user
   - Source references shown under each answer
-  - "Save to Brain": AI replies open in the note form for review before saving
+  - "Feed My Brain": AI proposes a note (title, category, tags) from an answer or summary; you preview, edit and confirm before anything is saved
   - One-click AI note summaries
 - **Meaning-based (semantic) search**: notes are embedded per chunk and combined with keyword search via Reciprocal Rank Fusion. Finds "car maintenance" when you search "automobile". Falls back to keyword search if no embedding model is configured or the endpoint is down.
 - Provider-independent AI layer: **Ollama**, **LM Studio**, or any **OpenAI-compatible** API (OpenAI, OpenRouter, Groq...)
@@ -50,6 +50,7 @@ Set an embedding model in *AI Settings* (e.g. Ollama `nomic-embed-text`, or Gemi
 - **Cloud:** open *AI Settings*, choose "OpenAI-compatible", set base URL, model and API key, then *Test connection*.
 
 ## Documentation
+- [Spec compliance matrix (AC-01 to AC-12)](docs/SPEC_COMPLIANCE.md)
 - [Architecture, ERD and security](docs/ARCHITECTURE.md)
 - [Test plan and results](docs/TESTING.md)
 - [User guide and demo script](docs/USER_GUIDE.md)
